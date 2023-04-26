@@ -9,7 +9,7 @@ To use this code, simply clone the repository and install the required packages:
     cd VendingMachine_CLI
     python3 main.py
 
-  ### On windows
+  ### On indows
     git clone https://github.com/Seokyoung-Hong/VendingMachine_CLI.git
     cd VendingMachine_CLI
     python main.py
