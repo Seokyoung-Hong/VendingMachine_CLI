@@ -1,5 +1,6 @@
 import sys
 import os
+import platform
 from .vendingmachine import VendingMachine, Product
 
 __all__ = ['CommandLineInterface']
@@ -247,10 +248,16 @@ class CommandLineInterface(BaseException):
         Returns:
             str: 출력 메시지 문자열
         """
+        # output이 튜플인 경우 output과 end_output으로 분리
         if type(output) == tuple:
             output, end_output = output
-
-        os.system('cls')  # 화면을 클리어하여 리로드
+        
+        # 화면을 클리어하여 리로드
+        if platform.platform().startswith('Windows'): # Windows 운영체제인 경우
+            os.system('cls')  
+        else: # 그 외의 운영체제인 경우
+            os.system('clear')
+        
         if output is not None:
             sys.stdout.write(output)  # 출력할 내용의 시작 부분 출력
         if self.is_credit and product_list:
