@@ -283,7 +283,8 @@ class VendingMachine(BaseException):
             self.user.money_box[k] += v   # 사용자의 돈 보관함에 환불할 금액을 추가
             self.inserted_money -= k * v   # 투입된 금액에서 환불할 금액을 차감
             refund += k * v   # 총 환불 금액에 추가
-        return refund   # 총 환불 금액 반환
+        
+        return refund_dict, refund   # 총 환불 금액 반환
 
     
     def cal_refund(self, product: Product = Product(ID=0, name='None', price=0, count=0)) -> dict[int, int]:
