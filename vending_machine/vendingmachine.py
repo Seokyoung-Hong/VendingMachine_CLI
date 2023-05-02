@@ -211,7 +211,7 @@ class VendingMachine(BaseException):
         return self.products_name
 
 
-    def del_product(self, product: Product = None, id: int = None) -> list[Product]:
+    def delete_product(self, product: Product = None, id: int = None) -> list[Product]:
         """
         VendingMachine 클래스의 제품 삭제 메소드.
         
@@ -239,7 +239,23 @@ class VendingMachine(BaseException):
 
         return self.products
 
-    
+    def edit_product(self, product: Product, name: str = None, price: int = None, count: int = None) -> Product:
+        """
+        VendingMachine 클래스의 제품 수정 메소드.
+        
+        Args:
+            product (Product): 수정할 Product 객체.
+            name (str, optional): 수정할 제품의 이름. Defaults to None.
+            price (int, optional): 수정할 제품의 가격. Defaults to None.
+            count (int, optional): 수정할 제품의 재고 수량. Defaults to None.
+            
+        Returns:
+            Product: 수정된 Product 객체를 반환함.
+            
+        Raises:
+            ValueError: product가 Product 클래스의 인스턴스가 아닌 경우 예외를 발생시킴.
+        """
+        assert type(product) is Product  # product가 Product 클래스의 인스턴스인지 확인
     
     def insert_money(self, money: int) -> int:
         """
@@ -314,7 +330,6 @@ class VendingMachine(BaseException):
             for i in refund_dict:
                 # 예상 잔돈이 i보다 크거나 같고, 해당 단위의 잔돈이 보관함에 남아있는 경우
                 if self.inserted_money - product.price - sum_dict >= i:
-                    # 해당 단위의 잔돈을 1 감소시키고, 환불할 잔돈의 개수를 1 증가시킴
                     if change_box[i] > 0:
                         change_box[i] -= 1
                         refund_dict[i] += 1
