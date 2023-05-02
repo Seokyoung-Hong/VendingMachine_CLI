@@ -35,19 +35,22 @@ class Product():
         """
         return self.count < 1
     
-    def product_info(self, VM : 'VendingMachine' = None, check_money: bool = True) -> str:
+    def product_info(self, VM : 'VendingMachine' = None, check_money: bool = True, manage_mod: bool = False) -> str:
         """
         상품의 정보를 문자열로 반환하는 메서드입니다.
         
         args:
             VM (VendingMachine): 자판기 객체
             check_money (bool): 잔돈 부족 여부를 확인할지 여부
+            manage_mod (bool): 관리자 모드인지 여부
         
         returns:
             str: 상품의 정보
         """
         prod_name = TextFormatter.fill_str_with_space(self.name)
-        if self.is_empty: # 상품이 품절된 경우
+        if manage_mod: # 관리자 모드인 경우
+            return f'{self.id:>2d}. {prod_name} : {self.price:>5}원, {self.count:>3d}개'
+        elif self.is_empty: # 상품이 품절된 경우
             return TextFormatter.textColor(f'{self.id:>2d}. {prod_name} : {"품절":>5}', 'red') # 품절 표시를 빨간색으로 표시
         elif not VM.is_sellable(self) and check_money: # 잔돈 부족인 경우
             return TextFormatter.textColor(f'{self.id:>2d}. {prod_name} : {"잔돈 부족":>5}', 'red') # 잔돈 부족 표시를 빨간색으로 표시

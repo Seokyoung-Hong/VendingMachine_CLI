@@ -1,6 +1,7 @@
+import platform
 import sys
 import os
-import platform
+import hashlib
 from .vendingmachine import VendingMachine, Product
 
 __all__ = ['CommandLineInterface']
@@ -14,6 +15,7 @@ class CommandLineInterface(BaseException):
             VM (VendingMachine): 자판기(VendingMachine) 객체
         """
         self.machine = VM
+        self.password_file = 'password.txt'
 
     @property
     def is_credit(self) -> bool:
@@ -56,7 +58,7 @@ class CommandLineInterface(BaseException):
         return output
 
 
-    def show_product(self, first=False) -> str:
+    def show_product(self, first=False, manage=False) -> str:
         """
         물품 목록을 보여주는 메서드
 
@@ -71,10 +73,10 @@ class CommandLineInterface(BaseException):
         end_output = ''
         for product in products:
             assert type(product) is Product  # Product 객체인지 확인
-            output = output + '\n' + product.product_info(self.machine, check_money=False)  # 상품 정보를 출력 메시지에 추가
+            output = output + '\n' + product.product_info(self.machine, check_money=False, manage_mod=manage)  # 상품 정보를 출력 메시지에 추가
         if first:
             end_output += '결제수단을 선택하세요.\n현금(cash) or 카드(card)\n'  # 첫 화면일 경우 결제수단 선택 메시지 추가
-        else : 
+        elif not manage:
             output += '상품을 구매하시려면 "구매 [상품 id]" 또는 "buy [상품 id]" 를 입력하세요\n'  # 상품 구매 메시지 추가
         return (output,end_output)  # 최종적으로 구성된 메시지 반환
 
@@ -235,10 +237,65 @@ class CommandLineInterface(BaseException):
             return self.reload(self.buy(Input))  # buy 명령어 처리
         elif Input.isdigit() and not self.is_credit:
             return self.reload(self.insert(money=int(Input)))  # 숫자로 시작하는 입력에 대한 처리
+        elif Input in ['management','관리자']: # 관리자 모드 진입
+            pw_input = input('관리자 비밀번호를 입력하세요: ')
+            return self.reload(self.management)
         elif Input in ['exit', '나가기']:
             raise SystemExit  # exit 명령어 처리
         return Input  # 그 외의 입력은 그대로 반환
 
+    def check_passwd(self):
+        if os.path.exists(self.password_file):
+            before_passwd = input('기존 비밀번호를 입력하세요: ')
+            m = hashlib.sha256()
+            m.update(before_passwd.encode('utf-8'))
+            with open(self.password_file, 'r') as f:
+                return m.hexdigest() == f.read()
+        else:
+            self.change_passwd()
+            return True
+    
+    def change_passwd(self):
+        passwd = input('새로운 비밀번호를 입력하세요:')
+        with open('passwd.txt', 'w') as f:
+            m = hashlib.sha256()
+            m.update(passwd.encode('utf-8'))
+            f.write(m.hexdigest())
+
+    def add_product(self):
+        name = input('추가할 상품의 이름을 입력하세요: ')
+        price = input('추가할 상품의 가격을 입력하세요: ')
+        count = int(input('추가할 상품의 개수를 입력하세요(미입력시 30): '))
+        if count == '':
+            count = 30
+        self.machine.add_product(name, price, count)
+    
+    def delete_product(self):
+        sys.stdout.write(self.show_product(manage=True)[0])
+        id = input('삭제할 상품의 번호를 입력하세요: ')
+        for i in self.machine.product_list:
+            if i.id == id:
+                self.machine.delete_product(i)
+                break
+        resort = input('상품을 삭제하였습니다. 상품 ID를 재정렬하시겠습니까?(y/n): ')
+        if resort == 'y':
+            self.machine.resort_product()
+
+    def management(self):
+        if self.check_passwd(): # 관리자 모드 출력
+            Input = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 비밀번호 변경\n5. 나가기\n')
+            if Input == '1':
+                self.machine.add_product()
+            elif Input == '2':
+                self.machine.delete_product()
+            elif Input == '3':
+                self.machine.edit_product()
+            elif Input == '4':
+                self.change_passwd()
+            elif Input == '5':
+                return '나가기'
+        else:
+            return "비밀번호가 일치하지 않습니다.\n"
 
     def reload(self, output='', end_output='', product_list=True):
         """
