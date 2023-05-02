@@ -169,6 +169,9 @@ class CommandLineInterface(BaseException):
         except ValueError as e:
             if str(e) == '구매 불가':
                 output = '구매 불가\n'  # 상품 구매가 불가능한 경우 오류 메시지 설정
+            elif str(e) == '구매 불가능한 상품 ID':
+                output = '구매 불가능한 상품 ID\n'  # 상품 ID가 존재하지 않는 경우 오류 메시지 설정
+            
         return ('', output)  # 빈 문자열과 output을 튜플로 반환
 
     
