@@ -16,7 +16,7 @@ class VendingMachineUser():
             selected_product (Product): 사용자가 선택한 상품을 나타내는 변수. 기본값은 None입니다.
             is_credit (bool): 신용 결제 모드 여부를 나타내는 변수. 기본값은 False입니다.
         """
-        self.money_box: dict = {100: 4, 500: 2, 1000: 4}
+        self.money_box: dict[int:int] = {100: 4, 500: 2, 1000: 4}
         self.credit_money: int = 10000
         self.is_credit: bool = False
 
@@ -24,7 +24,7 @@ class VendingMachineUser():
         """
         사용자의 돈 보유 상태와 선택한 구매방법을 초기화하는 메서드입니다.
         """
-        self.money_box = {100: 4, 500: 2, 1000: 4}
+        self.money_box: dict[int:int] = {100: 4, 500: 2, 1000: 4}
         self.credit_money: int = 10000
         self.is_credit: bool = False
 
@@ -61,18 +61,18 @@ class VendingMachineUser():
 
 
 class VendingMachine(BaseException):
-    def __init__(self, file : str = None) -> None:
+    def __init__(self, file: str = None) -> None:
         """
         자판기 클래스의 생성자
 
         Args:
             file (str, optional): JSON 파일명. Defaults to None.
         """
-        self.products : list = []               # 자판기에 등록된 상품들을 담을 리스트
-        self.change_box : dict = {100 : 10, 500 : 10, 1000 : 0}   # 거스름돈 보관함
-        self.inserted_money : int = 0          # 사용자가 투입한 금액
-        self.user : VendingMachineUser = VendingMachineUser()   # 자판기 사용자
-        self.report_file : str = 'report.txt'   # 자판기 리포트 파일명
+        self.products: list[Product] = []               # 자판기에 등록된 상품들을 담을 리스트
+        self.change_box: dict[int:int] = {100 : 10, 500 : 10, 1000 : 0}   # 거스름돈 보관함
+        self.inserted_money: int = 0          # 사용자가 투입한 금액
+        self.user: VendingMachineUser = VendingMachineUser()   # 자판기 사용자
+        self.report_file: str = 'report.txt'   # 자판기 리포트 파일명
         if file:
             self.products_by_json(file)   # JSON 파일을 통해 상품들을 등록하는 메소드 호출
 
@@ -84,10 +84,10 @@ class VendingMachine(BaseException):
         Returns:
             int: 재고가 있는 상품들 중 가장 높은 가격
         """
-        return max([ i.price for i in self.products if i.count > 0])   # 재고가 있는 상품들 중 가장 높은 가격 반환
+        return max([i.price for i in self.products if i.count > 0])   # 재고가 있는 상품들 중 가장 높은 가격 반환
 
     @property
-    def products_name(self) -> list:
+    def products_name(self) -> list[Product]:
         """
         상품들의 이름을 리스트로 반환하는 프로퍼티
         """
@@ -118,9 +118,9 @@ class VendingMachine(BaseException):
         Returns:
             None
         """
-        self.products = []   # 상품 리스트 초기화
-        self.change_box = {100 : 100, 500 : 100, 1000 : 0}   # 거스름돈 보관함 초기화
-        self.inserted_money : int = 0   # 투입된 금액 초기화
+        self.products: list[Product] = []   # 상품 리스트 초기화
+        self.change_box: dict[int:int] = {100 : 100, 500 : 100, 1000 : 0}   # 거스름돈 보관함 초기화
+        self.inserted_money: int = 0   # 투입된 금액 초기화
         self.user.reset()   # 사용자 정보 초기화
         return None
     
@@ -151,7 +151,7 @@ class VendingMachine(BaseException):
                 f.write(f'[{time_str}] {issue_on}원이 부족합니다.\n') # 리포트 파일에 메시지 작성
         return None
     
-    def sort(self) -> list:
+    def sort(self) -> list[Product]:
         """
         상품 리스트를 가격 기준으로 정렬하는 메서드
 
@@ -162,7 +162,7 @@ class VendingMachine(BaseException):
         return self.products   # 정렬된 상품 리스트 반환
 
     
-    def add_product(self, name: str, price: int = None, count: int = 0, ID: int = None, product_type: str = None) -> list:
+    def add_product(self, name: str, price: int = None, count: int = 0, ID: int = None, product_type: str = None) -> list[Product]:
         """
         제품(Product)을 추가하는 메서드
 
@@ -345,9 +345,9 @@ class VendingMachine(BaseException):
         """
         
         if product_id in self.products_id:   # 상품 ID가 존재하는 경우
-            product = self.products[product_id - 1]   # 상품 ID로부터 상품 객체를 가져옴
+            product:Product = self.products[product_id - 1]   # 상품 ID로부터 상품 객체를 가져옴
         else:
-            raise ValueError('구매 불가')  # 상품 ID가 존재하지 않는 경우 예외 발생
+            raise ValueError('구매 불가능한 상품 ID')  # 상품 ID가 존재하지 않는 경우 예외 발생
 
         if self.is_sellable(product):   # 상품이 판매 가능한 상태인지 확인
             if self.user.is_credit:   # 사용자가 신용카드를 사용하는 경우
