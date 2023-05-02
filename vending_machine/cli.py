@@ -144,10 +144,12 @@ class CommandLineInterface(BaseException):
         자판기에 투입한 금액을 환불하는 메서드
 
         Returns:
-            str: 환불된 금액에 대한 메시지를 반환
+            str: 환불된 금액에 대한 메시지를 반환함
         """
-        refunded = self.machine.refund(self.machine.cal_refund())  # 환불할 금액 계산 후 자판기에 환불 요청
-        return f"{refunded}원 환불되었습니다.\n"  # 환불된 금액에 대한 메시지 반환
+        refund_dict: dict[int, int]
+        refunded: int
+        refund_dict, refunded = self.machine.refund(self.machine.cal_refund())  # 환불할 금액 계산 후 자판기에 환불 요청
+        return ''.join(f'{k}원 {v}개, ' for k,v in refund_dict.items())+'\n'+f"{refunded}원 환불되었습니다.\n"  # 환불된 금액에 대한 메시지 반환
 
     def buy(self, Input: str) -> tuple:
         """
