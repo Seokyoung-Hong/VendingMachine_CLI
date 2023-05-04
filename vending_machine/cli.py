@@ -39,6 +39,15 @@ class CommandLineInterface(BaseException):
             return f'{self.machine.user.status}\n'
         return f'{self.machine.user.status}\n{self.machine.status}\n'
 
+    def clear(self) -> None:
+        """
+        화면을 지우는 메서드
+        """
+        if platform.platform().startswith('Windows'): # Windows 운영체제인 경우
+            os.system('cls')  
+        else: # 그 외의 운영체제인 경우
+            os.system('clear')
+
     def pay_method(self, Input) -> str:
         """
         결제 수단을 변경하는 메서드
@@ -239,7 +248,7 @@ class CommandLineInterface(BaseException):
             return self.reload(self.insert(money=int(Input)))  # 숫자로 시작하는 입력에 대한 처리
         elif Input in ['management','관리자']: # 관리자 모드 진입
             pw_input = input('관리자 비밀번호를 입력하세요: ')
-            return self.reload(self.management)
+            return self.reload(self.management())
         elif Input in ['exit', '나가기']:
             raise SystemExit  # exit 명령어 처리
         return Input  # 그 외의 입력은 그대로 반환
@@ -256,6 +265,7 @@ class CommandLineInterface(BaseException):
             return True
     
     def change_passwd(self):
+        self.clear()
         passwd = input('새로운 비밀번호를 입력하세요:')
         with open('passwd.txt', 'w') as f:
             m = hashlib.sha256()
@@ -281,16 +291,30 @@ class CommandLineInterface(BaseException):
         if resort == 'y':
             self.machine.resort_product()
 
+    def edit_product(self):
+        pass
+    
+    def edit_products(self):
+        Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))
+        functions = [self.add_product, self.delete_product, self.edit_product]
+        if Input <= len(functions):
+            functions[Input-1]()
+        else:
+            self.clear()
+            print('잘못된 입력입니다.')
+            return self.edit_products()
+    
+    def edit_change(self):
+        pass
+    
     def management(self):
         if self.check_passwd(): # 관리자 모드 출력
-            Input = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 비밀번호 변경\n5. 나가기\n')
+            Input = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n5. 나가기\n')
             if Input == '1':
-                self.machine.add_product()
+                self.edit_products()
             elif Input == '2':
-                self.machine.delete_product()
+                self.edit_change
             elif Input == '3':
-                self.machine.edit_product()
-            elif Input == '4':
                 self.change_passwd()
             elif Input == '5':
                 return '나가기'
@@ -314,11 +338,7 @@ class CommandLineInterface(BaseException):
         if type(output) == tuple:
             output, end_output = output
         
-        # 화면을 클리어하여 리로드
-        if platform.platform().startswith('Windows'): # Windows 운영체제인 경우
-            os.system('cls')  
-        else: # 그 외의 운영체제인 경우
-            os.system('clear')
+        self.clear()  # 화면 리로드
         
         if output is not None:
             sys.stdout.write(output)  # 출력할 내용의 시작 부분 출력
