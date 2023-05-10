@@ -275,10 +275,12 @@ class CommandLineInterface(BaseException):
     def add_product(self):
         name = input('추가할 상품의 이름을 입력하세요: ')
         price = input('추가할 상품의 가격을 입력하세요: ')
-        count = int(input('추가할 상품의 개수를 입력하세요(미입력시 30): '))
-        if count == '':
+        try :
+            count = int(input('추가할 상품의 개수를 입력하세요(미입력시 30): '))
+        except :
             count = 30
-        self.machine.add_product(name, price, count)
+        
+        self.machine.add_product(name=name,price=price,count=count)
     
     def delete_product(self):
         sys.stdout.write(self.show_product(manage=True)[0])
@@ -309,6 +311,33 @@ class CommandLineInterface(BaseException):
             if product.id == id:
                 functions[Input-1]()
                 break
+    
+    def edit_product(self):
+        if len(self.machine.products) == 0:
+            print('자판기에 상품이 존재하지 않습니다.')
+            return None
+        while True:
+            id = int(input('수정할 상품의 ID를 입력하세요: '))
+            for product in self.machine.products:
+                assert type(product) is Product
+                if int(product) == id:
+                    target_product = product
+                    break
+            if target_product is None:
+                print('해당 상품이 존재하지 않습니다.')
+            else:
+                break
+        name = input('수정할 상품의 이름을 입력하세요(미입력시 미수정): ')
+        price = input('수정할 상품의 가격을 입력하세요(미입력시 미수정): ')
+        count = input('수정할 상품의 개수를 입력하세요(미입력시 미수정): ')
+        if len(name) == 0:
+            name = None
+        if len(price) == 0:
+            price = None
+        if len(count) == 0:
+            count = None
+        target_product:Product = None
+        return self.machine.edit_product(name=name,price=price,count=count,product=target_product)
     
     def edit_products(self):
         Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))
@@ -350,6 +379,7 @@ class CommandLineInterface(BaseException):
         Returns:
             str: 출력 메시지 문자열
         """
+        self.machine.save_products()
         # output이 튜플인 경우 output과 end_output으로 분리
         if type(output) == tuple:
             output, end_output = output
