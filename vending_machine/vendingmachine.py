@@ -61,7 +61,7 @@ class VendingMachineUser():
 
 
 class VendingMachine(BaseException):
-    def __init__(self, file: str = None) -> None:
+    def __init__(self, file: str) -> None:
         """
         자판기 클래스의 생성자
 
@@ -73,8 +73,8 @@ class VendingMachine(BaseException):
         self.inserted_money: int = 0          # 사용자가 투입한 금액
         self.user: VendingMachineUser = VendingMachineUser()   # 자판기 사용자
         self.report_file: str = 'report.txt'   # 자판기 리포트 파일명
-        if file:
-            self.products_by_json(file)   # JSON 파일을 통해 상품들을 등록하는 메소드 호출
+        self.products_file = file
+        self.products_by_json()   # JSON 파일을 통해 상품들을 등록하는 메소드 호출
 
     @property
     def max_price(self) -> int:
@@ -186,20 +186,17 @@ class VendingMachine(BaseException):
         return self.sort()   # 상품 리스트를 정렬하여 반환
 
     
-    def products_by_json(self, file_name: str) -> list[str]:
+    def products_by_json(self) -> list[str]:
         """
         JSON 파일에서 제품 정보를 로드하여 제품을 추가하는 메서드
-
-        Args:
-            file_name (str): JSON 파일의 경로와 파일 이름
-
+        
         Returns:
             List[str]: 추가된 제품들의 이름(name)을 담은 리스트
         """
         import json
         
         # JSON 파일을 열어 데이터를 로드합니다.
-        with open(file_name, 'r', encoding='UTF-8') as f:
+        with open(self.products_file, 'r', encoding='UTF-8') as f:
             json_data = json.load(f)
             
         # json_data를 순회하면서 제품(Product) 객체를 추가합니다.
@@ -209,7 +206,15 @@ class VendingMachine(BaseException):
         
         # 추가된 제품의 이름(name)들을 리스트로 반환합니다.
         return self.products_name
-
+    
+    def save_products(self):
+        '''
+        제품 정보를 JSON 파일에 저장하는 메서드
+        '''
+        import json
+        
+        with open(self.products_file,'w') as f:
+            json.dump(self.products, f)
 
     def delete_product(self, product: Product = None, id: int = None) -> list[Product]:
         """
@@ -256,6 +261,13 @@ class VendingMachine(BaseException):
             ValueError: product가 Product 클래스의 인스턴스가 아닌 경우 예외를 발생시킴.
         """
         assert type(product) is Product  # product가 Product 클래스의 인스턴스인지 확인
+        property_list = {name : self.name, price : self.price, count : self.count}
+        
+        for k,v in property_list.items():
+            if k is not None:
+                v = k
+
+        return product
     
     def insert_money(self, money: int) -> int:
         """
