@@ -15,7 +15,7 @@ class CommandLineInterface(BaseException):
             VM (VendingMachine): 자판기(VendingMachine) 객체
         """
         self.machine = VM
-        self.password_file = 'password.txt'
+        self.password_file = 'passwd.txt'
 
     @property
     def is_credit(self) -> bool:
@@ -86,7 +86,7 @@ class CommandLineInterface(BaseException):
         if first:
             end_output += '결제수단을 선택하세요.\n현금(cash) or 카드(card)\n'  # 첫 화면일 경우 결제수단 선택 메시지 추가
         elif not manage:
-            output += '상품을 구매하시려면 "구매 [상품 id]" 또는 "buy [상품 id]" 를 입력하세요\n'  # 상품 구매 메시지 추가
+            output += '\n\n상품을 구매하시려면 "구매 [상품 id]" 또는 "buy [상품 id]" 를 입력하세요\n'  # 상품 구매 메시지 추가
         return (output,end_output)  # 최종적으로 구성된 메시지 반환
 
 
@@ -247,7 +247,6 @@ class CommandLineInterface(BaseException):
         elif Input.isdigit() and not self.is_credit:
             return self.reload(self.insert(money=int(Input)))  # 숫자로 시작하는 입력에 대한 처리
         elif Input in ['management','관리자']: # 관리자 모드 진입
-            pw_input = input('관리자 비밀번호를 입력하세요: ')
             return self.reload(self.management())
         elif Input in ['exit', '나가기']:
             raise SystemExit  # exit 명령어 처리
@@ -255,7 +254,7 @@ class CommandLineInterface(BaseException):
 
     def check_passwd(self):
         if os.path.exists(self.password_file):
-            before_passwd = input('기존 비밀번호를 입력하세요: ')
+            before_passwd = input('비밀번호를 입력하세요: ')
             m = hashlib.sha256()
             m.update(before_passwd.encode('utf-8'))
             with open(self.password_file, 'r') as f:
@@ -271,6 +270,7 @@ class CommandLineInterface(BaseException):
             m = hashlib.sha256()
             m.update(passwd.encode('utf-8'))
             f.write(m.hexdigest())
+        return '나가기'
 
     def add_product(self):
         name = input('추가할 상품의 이름을 입력하세요: ')
@@ -281,90 +281,104 @@ class CommandLineInterface(BaseException):
             count = 30
         
         self.machine.add_product(name=name,price=price,count=count)
+        return '나가기'
     
-    def delete_product(self):
-        sys.stdout.write(self.show_product(manage=True)[0])
-        id = input('삭제할 상품의 번호를 입력하세요: ')
-        for i in self.machine.product_list:
-            if i.id == id:
-                self.machine.delete_product(i)
-                break
-        resort = input('상품을 삭제하였습니다. 상품 ID를 재정렬하시겠습니까?(y/n): ')
-        if resort == 'y':
-            self.machine.resort_product()
+    def select_product(self, action: str):
+        sys.stdout.write(self.show_product(manage=True)[0]+'\n')
+        while True:
+            id = int(input(f'{action}할 상품의 번호를 입력하세요: '))
+            for product in self.machine.products:
+                if product.id == id:
+                    return product
+            self.clear()
+            print('잘못된 상품 번호입니다. 다시 입력해주세요.')
 
-    def edit_product_name(self, product: Product):
-        sys.stdout.write(self.show_product(manage=True)[0])
-        id = input('수정할 상품의 번호를 입력하세요: ')
-        for i in self.machine.product_list:
-            if i.id == id:
-                name = input('수정할 상품의 이름을 입력하세요: ')
-                self.machine.edit_product(i, name=name)
-                break
-    
-    def edit_product(self):
-        Input = int('1. 상품명 수정\n2. 상품 가격 수정\n3. 상품 개수 수정\n4. 나가기\n')
-        functions = [self.edit_name, self.edit_price, self.edit_count]
-        id = input('수정할 상품의 번호를 입력하세요: ')
-        for product in self.machine.products:
-            assert isinstance(product, Product)
-            if product.id == id:
-                functions[Input-1]()
-                break
+    def delete_product(self):
+        product = self.select_product('삭제')
+        if product:
+            self.machine.delete_product(product)
+            resort = input('상품을 삭제하였습니다. 상품 ID를 재정렬하시겠습니까?(y/n): ')
+            if resort == 'y':
+                self.machine.resort_product()
+
+
     
     def edit_product(self):
         if len(self.machine.products) == 0:
             print('자판기에 상품이 존재하지 않습니다.')
             return None
-        while True:
-            id = int(input('수정할 상품의 ID를 입력하세요: '))
-            for product in self.machine.products:
-                assert type(product) is Product
-                if int(product) == id:
-                    target_product = product
-                    break
-            if target_product is None:
-                print('해당 상품이 존재하지 않습니다.')
-            else:
-                break
-        name = input('수정할 상품의 이름을 입력하세요(미입력시 미수정): ')
-        price = input('수정할 상품의 가격을 입력하세요(미입력시 미수정): ')
-        count = input('수정할 상품의 개수를 입력하세요(미입력시 미수정): ')
-        if len(name) == 0:
-            name = None
-        if len(price) == 0:
-            price = None
-        if len(count) == 0:
-            count = None
-        target_product:Product = None
-        return self.machine.edit_product(name=name,price=price,count=count,product=target_product)
+        target_product = self.select_product('수정')
+        
+        name = input('수정할 상품의 이름을 입력하세요(미입력시 미수정): ').strip() or None
+        price = input('수정할 상품의 가격을 입력하세요(미입력시 미수정): ').strip() or None
+        count = input('수정할 상품의 개수를 입력하세요(미입력시 미수정): ').strip() or None
+
+        self.machine.edit_product(name=name,price=price,count=int(count),product=target_product)
+        return '나가기'
     
     def edit_products(self):
-        Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))
-        functions = [self.add_product, self.delete_product, self.edit_product]
-        if Input <= len(functions):
-            functions[Input-1]()
-        else:
+        functions = [self.add_product, self.delete_product, self.edit_product, lambda: '나가기']
+        try:
+            Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))
+            return functions[Input-1]()
+        except:
             self.clear()
             print('잘못된 입력입니다.')
             return self.edit_products()
     
     def edit_change(self):
-        pass
+        self.clear()
+        sys.stdout.write(self.machine.change_box_info)
+        try :
+            Input = int(input('1. 잔돈 추가\n2. 잔돈 삭제\n3. 나가기\n'))
+            functions = [self.add_change, self.delete_change, lambda: '나가기']
+            return functions[Input-1]()
+        except:
+            self.clear()
+            print('잘못된 입력입니다.')
+            return self.edit_change()
+    
+    def add_change(self):
+        try:
+            Input = int(input('추가할 잔돈의 금액을 입력하세요: '))
+            self.machine.add_change(money=Input)
+            return '나가기'
+        except:
+            self.clear()
+            print('잘못된 입력입니다.')
+            return self.add_change()
+    
+    def delete_change(self):
+        try:
+            Input = int(input('삭제할 잔돈의 금액을 입력하세요: '))
+            self.machine.delete_change(money=Input)
+            return '나가기'
+        except:
+            self.clear()
+            print('잘못된 입력입니다.')
+            return self.delete_change()
+    
     
     def management(self):
-        if self.check_passwd(): # 관리자 모드 출력
-            Input = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n5. 나가기\n')
-            if Input == '1':
-                self.edit_products()
-            elif Input == '2':
-                self.edit_change
-            elif Input == '3':
-                self.change_passwd()
-            elif Input == '5':
-                return '나가기'
+        if self.check_passwd():
+            options = {
+                '1': self.edit_products,
+                '2': self.edit_change,
+                '3': self.change_passwd,
+                '4': lambda: '나가기',
+            }
+            while True:
+                input_text = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n4. 나가기\n')
+                if input_text in options:
+                    result = options[input_text]()
+                    if result == '나가기':
+                        break
+                else:
+                    print('잘못된 입력입니다.')
         else:
-            return "비밀번호가 일치하지 않습니다.\n"
+            print("비밀번호가 일치하지 않습니다.")
+        return '관리자 모드 종료'
+
 
     def reload(self, output='', end_output='', product_list=True):
         """

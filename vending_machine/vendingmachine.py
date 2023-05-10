@@ -75,7 +75,11 @@ class VendingMachine(BaseException):
         self.report_file: str = 'report.txt'   # 자판기 리포트 파일명
         self.products_file = file
         self.products_by_json()   # JSON 파일을 통해 상품들을 등록하는 메소드 호출
-
+    
+    @property
+    def change_box_info(self):
+        return f'100원 : {self.change_box[100]}개   500원 : {self.change_box[500]}개   1000원 : {self.change_box[1000]}개'
+    
     @property
     def max_price(self) -> int:
         """
@@ -85,6 +89,10 @@ class VendingMachine(BaseException):
             int: 재고가 있는 상품들 중 가장 높은 가격
         """
         return max([i.price for i in self.products if i.count > 0])   # 재고가 있는 상품들 중 가장 높은 가격 반환
+    
+    @property
+    def to_dict(self):
+        return [product.to_dict for product in self.products]
 
     @property
     def products_name(self) -> list[Product]:
@@ -214,7 +222,7 @@ class VendingMachine(BaseException):
         import json
         
         with open(self.products_file,'w') as f:
-            json.dump(self.products, f)
+            json.dump(self.to_dict, f)
 
     def delete_product(self, product: Product = None, id: int = None) -> list[Product]:
         """
@@ -261,12 +269,12 @@ class VendingMachine(BaseException):
             ValueError: product가 Product 클래스의 인스턴스가 아닌 경우 예외를 발생시킴.
         """
         assert type(product) is Product  # product가 Product 클래스의 인스턴스인지 확인
-        property_list = {name : self.name, price : self.price, count : self.count}
+        property_list = {'name': name, 'price': price, 'count': count}
         
-        for k,v in property_list.items():
-            if k is not None:
-                v = k
-
+        for key, value in property_list.items():
+            if value is not None:
+                setattr(product, key, value)
+                
         return product
     
     def insert_money(self, money: int) -> int:
@@ -413,3 +421,4 @@ class VendingMachine(BaseException):
             self.issue_report(issue_type="No_change", issue_on=str(e))
             return False
         return product.price <= self.inserted_money # 투입된 금액이 상품 가격보다 큰 경우 구매 가능
+    

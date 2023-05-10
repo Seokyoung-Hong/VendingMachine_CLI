@@ -35,6 +35,18 @@ class Product():
         """
         return self.count < 1
     
+    @property
+    def to_dict(self):
+        """
+        상품 객체를 딕셔너리로 반환하는 프로퍼티
+        """
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'count': self.count,
+        }
+    
     def product_info(self, VM : 'VendingMachine' = None, check_money: bool = True, manage_mod: bool = False) -> str:
         """
         상품의 정보를 문자열로 반환하는 메서드입니다.
