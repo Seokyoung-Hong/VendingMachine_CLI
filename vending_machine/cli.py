@@ -291,8 +291,24 @@ class CommandLineInterface(BaseException):
         if resort == 'y':
             self.machine.resort_product()
 
+    def edit_product_name(self, product: Product):
+        sys.stdout.write(self.show_product(manage=True)[0])
+        id = input('수정할 상품의 번호를 입력하세요: ')
+        for i in self.machine.product_list:
+            if i.id == id:
+                name = input('수정할 상품의 이름을 입력하세요: ')
+                self.machine.edit_product(i, name=name)
+                break
+    
     def edit_product(self):
-        pass
+        Input = int('1. 상품명 수정\n2. 상품 가격 수정\n3. 상품 개수 수정\n4. 나가기\n')
+        functions = [self.edit_name, self.edit_price, self.edit_count]
+        id = input('수정할 상품의 번호를 입력하세요: ')
+        for product in self.machine.products:
+            assert isinstance(product, Product)
+            if product.id == id:
+                functions[Input-1]()
+                break
     
     def edit_products(self):
         Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))

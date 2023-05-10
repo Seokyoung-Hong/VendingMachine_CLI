@@ -10,7 +10,7 @@ class Product():
 
         Args:
             ID (int): 상품 ID
-            name (str): 상품 이름
+            name (str): 상품 이름    
             price (int): 상품 가격
             count (int, optional): 상품 수량. 기본값은 0.
             product_type (str, optional): 상품 종류. 기본값은 None.
