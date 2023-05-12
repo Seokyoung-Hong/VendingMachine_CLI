@@ -305,6 +305,7 @@ class CommandLineInterface(BaseException):
     
     def edit_product(self):
         if len(self.machine.products) == 0:
+            self.clear()
             print('자판기에 상품이 존재하지 않습니다.')
             return None
         target_product = self.select_product('수정')
@@ -314,15 +315,15 @@ class CommandLineInterface(BaseException):
         count = input('수정할 상품의 개수를 입력하세요(미입력시 미수정): ').strip() or None
 
         self.machine.edit_product(name=name,price=price,count=int(count),product=target_product)
-        return '나가기'
+        return '상품수정 완료'
     
     def edit_products(self):
         functions = [self.add_product, self.delete_product, self.edit_product, lambda: '나가기']
+        self.clear()
         try:
             Input = int(input('1. 상품 추가\n2. 상품 삭제\n3. 상품 수정\n4. 나가기\n'))
             return functions[Input-1]()
         except:
-            self.clear()
             print('잘못된 입력입니다.')
             return self.edit_products()
     
@@ -334,17 +335,16 @@ class CommandLineInterface(BaseException):
             functions = [self.add_change, self.delete_change, lambda: '나가기']
             return functions[Input-1]()
         except:
-            self.clear()
             print('잘못된 입력입니다.')
             return self.edit_change()
     
     def add_change(self):
+        self.clear()
         try:
             Input = int(input('추가할 잔돈의 금액을 입력하세요: '))
             self.machine.add_change(money=Input)
-            return '나가기'
+            return '잔돈추가 완료'
         except:
-            self.clear()
             print('잘못된 입력입니다.')
             return self.add_change()
     
@@ -352,7 +352,7 @@ class CommandLineInterface(BaseException):
         try:
             Input = int(input('삭제할 잔돈의 금액을 입력하세요: '))
             self.machine.delete_change(money=Input)
-            return '나가기'
+            return '잔독삭제 완료'
         except:
             self.clear()
             print('잘못된 입력입니다.')
@@ -371,13 +371,13 @@ class CommandLineInterface(BaseException):
                 input_text = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n4. 나가기\n')
                 if input_text in options:
                     result = options[input_text]()
-                    if result == '나가기':
+                    if any(word in result for word in  ['나가기', '완료']) :
                         break
                 else:
                     print('잘못된 입력입니다.')
         else:
             print("비밀번호가 일치하지 않습니다.")
-        return '관리자 모드 종료'
+        return f'\n{result}\n관리자 모드 종료'
 
 
     def reload(self, output='', end_output='', product_list=True):

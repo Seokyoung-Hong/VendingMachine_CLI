@@ -299,9 +299,6 @@ class VendingMachine(BaseException):
         else:
             raise ValueError('Wrong money')  # 투입한 돈이 100, 500, 1000원 중 하나가 아닌 경우 예외 발생
         return self.inserted_money  # 현재까지 투입된 총 금액 반환
-
-
-    
     
     def refund(self, refund_dict: dict = {1000 : 0, 500 : 0, 100 : 0}) -> int:
         """
