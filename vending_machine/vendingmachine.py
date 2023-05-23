@@ -362,7 +362,7 @@ class VendingMachine(BaseException):
                 raise ValueError(str(insufficient_change)) # 거스름돈이 부족한 단위를 반환
         return refund_dict # 환불할 잔돈을 나타내는 딕셔너리 반환
 
-    def buy(self, product_id: int) -> str:
+    def buy(self, product_id: int) -> tuple[str, dict[int, int]]:
         """
         상품을 구매하는 메소드
 
@@ -384,13 +384,13 @@ class VendingMachine(BaseException):
         if self.is_sellable(product):   # 상품이 판매 가능한 상태인지 확인
             if self.user.is_credit:   # 사용자가 신용카드를 사용하는 경우
                 self.user.credit_money -= product.price
-                return product.name   # 구매한 상품의 이름 반환
+                return product.name, None   # 구매한 상품의 이름 반환
             else:   # 현금으로 결제하는 경우
                 refund_dict = self.cal_refund(product)   # 환불할 거스름돈 계산
-                self.refund(refund_dict)   # 환불
+                refund_dict, _ = self.refund(refund_dict)   # 환불
                 product.count -= 1   # 상품 수량 차감
                 self.inserted_money -= product.price   # 투입된 금액에서 상품
-                return product.name   # 구매한 상품의 이름 반환
+                return product.name, refund_dict   # 구매한 상품의 이름과 환불할 거스름돈 반환
         else:
             raise ValueError('구매 불가') # 구매 불가능한 경우 예외 처리
     
