@@ -277,6 +277,7 @@ class VendingMachine(BaseException):
                 
         return product
     
+    
     def insert_money(self, money: int) -> int:
         """
         투입한 돈을 자판기에 추가하는 메서드입니다.
@@ -290,7 +291,7 @@ class VendingMachine(BaseException):
             ValueError: 투입한 돈의 개수가 부족한 경우 예외 발생
             ValueError: 투입한 돈이 100, 500, 1000원 중 하나가 아닌 경우 예외 발생
         """
-        if money in self.change_box:
+        if self.money_check(money=money):  # 투입한 돈이 100, 500, 1000원 중 하나인지 확인
             if self.user.money_box[money] < 1:
                 raise ValueError('Not enough money')  # 투입한 돈의 개수가 부족한 경우 예외 발생
             self.user.money_box[money] -= 1  # 투입한 돈의 개수를 1 감소시킴
@@ -336,18 +337,18 @@ class VendingMachine(BaseException):
 
         # 거스름돈 계산에 사용할 변수들 초기화
         change_box = self.change_box.copy()  # 잔돈 보관함의 현재 상태를 복사하여 사용
-        refund_dict = {1000: 0, 500: 0, 100: 0}  # 거스름돈을 계산할 때 필요한 변수들
+        refund_dict = {500: 0, 100: 0}  # 거스름돈을 계산할 때 필요한 변수들
         sum_dict = sum([k * v for k, v in refund_dict.items()])  # refund_dict의 값을 합하여 초기화
-
+        
         # 예상 잔돈 계산
         expected_balance = self.inserted_money - product.price - sum_dict
-
+        
         # 입력된 돈이 0이 아니고, 예상 잔돈이 0보다 큰 동안 반복
         while self.inserted_money != 0 and expected_balance > 0:
             insufficient_change = 0  # 거스름돈 발생 여부를 확인하기 위한 변수
             for i in refund_dict:
                 # 예상 잔돈이 i보다 크거나 같고, 해당 단위의 잔돈이 보관함에 남아있는 경우
-                if self.inserted_money - product.price - sum_dict >= i:
+                if self.inserted_money - product.price - sum_dict >= i: 
                     if change_box[i] > 0:
                         change_box[i] -= 1
                         refund_dict[i] += 1
@@ -362,7 +363,26 @@ class VendingMachine(BaseException):
                 raise ValueError(str(insufficient_change)) # 거스름돈이 부족한 단위를 반환
         return refund_dict # 환불할 잔돈을 나타내는 딕셔너리 반환
 
+    def money_check(self,money:int = None,count:int = None):
+        assert money in [1000, 500, 100, None], 'Wrong money'
+        if money != None:
+            assert count>0, 'Wrong count'
+        
+    def add_change(self, money: int, count: int) -> None:
+        self.money_check(money,count)
+        self.change_box[money] += count
+        return count
+    
+    def get_change(self, money: int, count, int)-> None:
+        self.money_check(money,count)
+
+        change_count = min(count, self.change_box[money])
+        self.change_box[money] -= change_count
+        
+        return change_count
+
     def buy(self, product_id: int) -> tuple[str, dict[int, int]]:
+
         """
         상품을 구매하는 메소드
 
@@ -382,6 +402,7 @@ class VendingMachine(BaseException):
             raise ValueError('구매 불가능한 상품 ID')  # 상품 ID가 존재하지 않는 경우 예외 발생
 
         if self.is_sellable(product):   # 상품이 판매 가능한 상태인지 확인
+            ouput = product.name   # 구매한 상품의 이름을 저장
             if self.user.is_credit:   # 사용자가 신용카드를 사용하는 경우
                 self.user.credit_money -= product.price
                 return product.name, None   # 구매한 상품의 이름 반환
@@ -390,6 +411,8 @@ class VendingMachine(BaseException):
                 refund_dict, _ = self.refund(refund_dict)   # 환불
                 product.count -= 1   # 상품 수량 차감
                 self.inserted_money -= product.price   # 투입된 금액에서 상품
+                self.inserted_money -= product.price   # 투입된 금액에서 상품 가격 차감
+                output += f' {self.inserted_money}원을 반환합니다.'   # 반환할 금액을 출력
                 return product.name, refund_dict   # 구매한 상품의 이름과 환불할 거스름돈 반환
         else:
             raise ValueError('구매 불가') # 구매 불가능한 경우 예외 처리

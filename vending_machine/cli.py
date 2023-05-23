@@ -117,9 +117,6 @@ class CommandLineInterface(BaseException):
         output += '\n\n'  # 메시지의 끝 부분에 개행 추가
         return output  # 최종적으로 구성된 메시지 반환
 
-
-
-
     @property
     def help(self) -> str:
         return """
@@ -153,7 +150,7 @@ class CommandLineInterface(BaseException):
     def refund(self) -> str:
         """
         자판기에 투입한 금액을 환불하는 메서드
-
+.
         Returns:
             str: 환불된 금액에 대한 메시지를 반환함
         """
@@ -334,8 +331,8 @@ class CommandLineInterface(BaseException):
         self.clear()
         sys.stdout.write(self.machine.change_box_info)
         try :
-            Input = int(input('1. 잔돈 추가\n2. 잔돈 삭제\n3. 나가기\n'))
-            functions = [self.add_change, self.delete_change, lambda: '나가기']
+            Input = int(input('1. 잔돈 추가\n2. 잔돈 인출\n3. 나가기\n'))
+            functions = [self.add_change, self.get_change, lambda: '나가기']
             return functions[Input-1]()
         except:
             print('잘못된 입력입니다.')
@@ -344,22 +341,27 @@ class CommandLineInterface(BaseException):
     def add_change(self):
         self.clear()
         try:
-            Input = int(input('추가할 잔돈의 금액을 입력하세요: '))
-            self.machine.add_change(money=Input)
-            return '잔돈추가 완료'
+            money = int(input('추가할 잔돈의 종류를 입력하세요: '))
+            count = int(input('추가할 잔돈의 개수를 입력하세요: '))
+            count = self.machine.add_change(money=money, count=count)
+            return f'{money}원 {count}개 추가 완료'
         except:
             print('잘못된 입력입니다.')
             return self.add_change()
     
-    def delete_change(self):
+    def get_change(self):
         try:
-            Input = int(input('삭제할 잔돈의 금액을 입력하세요: '))
-            self.machine.delete_change(money=Input)
-            return '잔독삭제 완료'
-        except:
+            money = int(input('인출할 잔돈의 종류을 입력하세요: '))
+            count = int(input('인출할 잔돈의 개수를 입력하세요: '))
+            real_count =  self.machine.get_change(money=money,count=count)
+            return f'{money}원 {real_count}개 인출 완료'
+        except Exception as e:
             self.clear()
-            print('잘못된 입력입니다.')
-            return self.delete_change()
+            if str(e) == 'Not enough change':
+                print('잔돈이 부족합니다.')
+            else:
+                print('잘못된 입력입니다.')
+            return self.get_change()
     
     
     def management(self):
@@ -377,6 +379,7 @@ class CommandLineInterface(BaseException):
                     if any(word in result for word in  ['나가기', '완료']) :
                         break
                 else:
+                    self.clear()
                     print('잘못된 입력입니다.')
         else:
             print("비밀번호가 일치하지 않습니다.")
