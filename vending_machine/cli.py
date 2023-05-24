@@ -3,6 +3,7 @@ import sys
 import os
 import hashlib
 from .vendingmachine import VendingMachine, Product
+from .textformatter import TextFormatter
 
 __all__ = ['CommandLineInterface']
 
@@ -371,8 +372,11 @@ class CommandLineInterface(BaseException):
                 '3': self.change_passwd,
                 '4': lambda: '나가기',
             }
+            report = self.machine.report()
             while True:
-                input_text = input('관리자 모드입니다. 실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n4. 나가기\n')
+                print(f'관리자 모드입니다.')
+                print(TextFormatter.textColor(report, 'yellow'))
+                input_text = input('실행하고 싶은 기능의 숫자를 입력하세요.\n1. 상품 수정\n2. 잔돈 수정\n3. 비밀번호 변경\n4. 나가기\n')
                 if input_text in options:
                     result = options[input_text]()
                     if any(word in result for word in  ['나가기', '완료']) :
