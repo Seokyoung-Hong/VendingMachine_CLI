@@ -19,6 +19,7 @@ class VendingMachineUser():
         self.money_box: dict[int:int] = {100: 4, 500: 2, 1000: 4}
         self.credit_money: int = 10000
         self.is_credit: bool = False
+    
 
     def reset(self) -> None:
         """
@@ -53,7 +54,7 @@ class VendingMachineUser():
         """
         if self.is_credit:
             return f'잔액 : {self.credit_money}'
-        return f'1000원 : {self.money_box[1000]}개   500원 : {self.money_box[500]}개   100원 : {self.money_box[100]}개'
+        return f'사용자 잔액 : 1000원 : {self.money_box[1000]}개   500원 : {self.money_box[500]}개   100원 : {self.money_box[100]}개'
 
 
 
@@ -75,10 +76,25 @@ class VendingMachine(BaseException):
         self.report_file: str = 'report.txt'   # 자판기 리포트 파일명
         self.products_file = file
         self.products_by_json()   # JSON 파일을 통해 상품들을 등록하는 메소드 호출
+        
+    def chk_everytime(self) -> None:
+        """
+        자판기의 상태를 확인하고, 이슈가 발생한 경우 리포트를 작성하는 메서드
+        """
+        self.save_products()
+        for k,v in self.change_box.items():
+            if k < 1000 and v < 5:
+                self.issue_report(issue_type='No_change', issue_on=k)
+        
+        for product in self.products:
+            if product.count < 5:
+                self.issue_report(issue_type='Less_product', issue_on=product)
+        
+
     
     @property
     def change_box_info(self):
-        return f'100원 : {self.change_box[100]}개   500원 : {self.change_box[500]}개   1000원 : {self.change_box[1000]}개'
+        return f'100원 : {self.change_box[100]}개   500원 : {self.change_box[500]}개   1000원 : {self.change_box[1000]}개\n'
     
     @property
     def max_price(self) -> int:
@@ -154,8 +170,11 @@ class VendingMachine(BaseException):
             if issue_type == 'No_product': # 상품이 품절되었을 때
                 assert type(issue_on) == Product # issue_on이 Product 클래스의 인스턴스인지 확인
                 f.write(f'[{time_str}] {issue_on.id}. {issue_on.name} 상품의 재고가 없습니다.\n') # 리포트 파일에 메시지 작성
+            elif issue_type == 'Less_product': # 상품이 품절되었을 때
+                assert type(issue_on) == Product # issue_on이 Product 클래스의 인스턴스인지 확인
+                f.write(f'[{time_str}] {issue_on.id}. {issue_on.name} 상품의 재고가 부족합니다.\n') # 리포트 파일에 메시지 작성
             elif issue_type == 'No_change': # 거스름돈이 부족할 때
-                assert issue_on in ['100', '500', '1000'] # issue_on이 100, 500, 1000 중 하나인지 확인
+                assert str(issue_on) in ['100', '500', '1000'], 'Wrong_change' # issue_on이 100, 500, 1000 중 하나인지 확인
                 f.write(f'[{time_str}] {issue_on}원이 부족합니다.\n') # 리포트 파일에 메시지 작성
         return None
     
@@ -291,7 +310,7 @@ class VendingMachine(BaseException):
             ValueError: 투입한 돈의 개수가 부족한 경우 예외 발생
             ValueError: 투입한 돈이 100, 500, 1000원 중 하나가 아닌 경우 예외 발생
         """
-        if self.money_check(money=money):  # 투입한 돈이 100, 500, 1000원 중 하나인지 확인
+        if money in self.change_box:
             if self.user.money_box[money] < 1:
                 raise ValueError('Not enough money')  # 투입한 돈의 개수가 부족한 경우 예외 발생
             self.user.money_box[money] -= 1  # 투입한 돈의 개수를 1 감소시킴
@@ -315,9 +334,9 @@ class VendingMachine(BaseException):
         for k, v in refund_dict.items():
             self.change_box[k] -= v   # 거스름돈 보관함에서 환불할 금액을 차감
             self.user.money_box[k] += v   # 사용자의 돈 보관함에 환불할 금액을 추가
-            self.inserted_money -= k * v   # 투입된 금액에서 환불할 금액을 차감
             refund += k * v   # 총 환불 금액에 추가
-        
+            self.inserted_money -= k * v   # 투입된 금액에서 환불할 금액을 차감
+        assert self.inserted_money == 0, 'Wrong refund'   # 투입된 금액이 0이 아닌 경우 예외 발생
         return refund_dict, refund   # 총 환불 금액 반환
 
     
@@ -363,11 +382,12 @@ class VendingMachine(BaseException):
                 raise ValueError(str(insufficient_change)) # 거스름돈이 부족한 단위를 반환
         return refund_dict # 환불할 잔돈을 나타내는 딕셔너리 반환
 
-    def money_check(self,money:int = None,count:int = None):
+    def money_check(self,money:int, count:int = None):
         assert money in [1000, 500, 100, None], 'Wrong money'
-        if money != None:
+        if money != None and count != None:
             assert count>0, 'Wrong count'
-        
+        return True
+                    
     def add_change(self, money: int, count: int) -> None:
         self.money_check(money,count)
         self.change_box[money] += count
@@ -402,16 +422,16 @@ class VendingMachine(BaseException):
             raise ValueError('구매 불가능한 상품 ID')  # 상품 ID가 존재하지 않는 경우 예외 발생
 
         if self.is_sellable(product):   # 상품이 판매 가능한 상태인지 확인
-            ouput = product.name   # 구매한 상품의 이름을 저장
+            output = product.name   # 구매한 상품의 이름을 저장
             if self.user.is_credit:   # 사용자가 신용카드를 사용하는 경우
                 self.user.credit_money -= product.price
                 return product.name, None   # 구매한 상품의 이름 반환
             else:   # 현금으로 결제하는 경우
                 refund_dict = self.cal_refund(product)   # 환불할 거스름돈 계산
-                refund_dict, _ = self.refund(refund_dict)   # 환불
                 product.count -= 1   # 상품 수량 차감
                 self.inserted_money -= product.price   # 투입된 금액에서 상품
                 self.inserted_money -= product.price   # 투입된 금액에서 상품 가격 차감
+                refund_dict, _ = self.refund(refund_dict)   # 환불
                 output += f' {self.inserted_money}원을 반환합니다.'   # 반환할 금액을 출력
                 return product.name, refund_dict   # 구매한 상품의 이름과 환불할 거스름돈 반환
         else:

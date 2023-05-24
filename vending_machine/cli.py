@@ -205,6 +205,7 @@ class CommandLineInterface(BaseException):
         end_output = None
         try:
             self.machine.insert_money(money=money)  # money를 self.machine에 삽입
+            end_output = f'{money}원이 투입되었습니다.\n\n'  # money가 정상적으로 투입된 경우 메시지 설정
         except ValueError as e:
             if str(e) == 'Not enough money':
                 end_output = '해당 화폐를 가지고 있지 않습니다.\n'  # 돈이 충분하지 않을 경우 오류 메시지 설정
@@ -212,9 +213,6 @@ class CommandLineInterface(BaseException):
                 end_output = '동전을 다시 투입해주세요.\n'  # 잘못된 화폐를 투입한 경우 오류 메시지 설정
             else:
                 raise ValueError(e)
-
-        else:
-            end_output = f'{money}원이 투입되었습니다.\n\n'  # money가 정상적으로 투입된 경우 메시지 설정
 
         finally:
             output = output + self.buyable_product + '\n\n'  # self.buyable_product를 output에 추가
@@ -244,12 +242,13 @@ class CommandLineInterface(BaseException):
             return self.reload(self.refund())  # refund 명령어 처리
         elif Input.startswith(('buy ','구매 ')) and (Input[3:].isdigit() or Input[4:].isdigit()):
             return self.reload(self.buy(Input))  # buy 명령어 처리
-        elif Input.isdigit() and not self.is_credit:
+        elif Input.strip().isdigit() and not self.is_credit:
             return self.reload(self.insert(money=int(Input)))  # 숫자로 시작하는 입력에 대한 처리
         elif Input in ['management','관리자']: # 관리자 모드 진입
             return self.reload(self.management())
         elif Input in ['exit', '나가기']:
             raise SystemExit  # exit 명령어 처리
+        
         return Input  # 그 외의 입력은 그대로 반환
 
     def check_passwd(self):
@@ -399,7 +398,7 @@ class CommandLineInterface(BaseException):
         Returns:
             str: 출력 메시지 문자열
         """
-        self.machine.save_products()
+        self.machine.chk_everytime()
         # output이 튜플인 경우 output과 end_output으로 분리
         if type(output) == tuple:
             output, end_output = output
