@@ -23,9 +23,15 @@ class Product():
 
     
     def __int__(self) -> int:
+        """
+        상품 ID를 반환하는 메서드입니다.
+        """
         return self.id
 
     def __str__(self) -> str:
+        """
+        상품 이름을 반환하는 메서드입니다.
+        """
         return self.name
 
     @property

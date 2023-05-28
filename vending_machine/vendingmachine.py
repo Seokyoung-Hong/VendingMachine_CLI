@@ -93,7 +93,10 @@ class VendingMachine(BaseException):
 
     
     @property
-    def change_box_info(self):
+    def change_box_info(self) -> str:
+        """
+        거스름돈 보관함의 상태를 문자열로 반환하는 프로퍼티
+        """
         return f'100원 : {self.change_box[100]}개   500원 : {self.change_box[500]}개   1000원 : {self.change_box[1000]}개\n'
     
     @property
@@ -107,7 +110,10 @@ class VendingMachine(BaseException):
         return max([i.price for i in self.products if i.count > 0])   # 재고가 있는 상품들 중 가장 높은 가격 반환
     
     @property
-    def to_dict(self):
+    def to_dict(self) -> list[dict]:
+        """
+        상품 리스트를 딕셔너리로 반환하는 프로퍼티
+        """
         return [product.to_dict for product in self.products]
 
     @property
@@ -223,7 +229,7 @@ class VendingMachine(BaseException):
         import json
         
         # JSON 파일을 열어 데이터를 로드합니다.
-        with open(self.products_file, 'r', encoding='UTF-8') as f:
+        with open(self.products_file, 'r', encoding='EUC-KR') as f:
             json_data = json.load(f)
             
         # json_data를 순회하면서 제품(Product) 객체를 추가합니다.
@@ -234,14 +240,14 @@ class VendingMachine(BaseException):
         # 추가된 제품의 이름(name)들을 리스트로 반환합니다.
         return self.products_name
     
-    def save_products(self):
+    def save_products(self) -> None:
         '''
         제품 정보를 JSON 파일에 저장하는 메서드
         '''
         import json
         
         with open(self.products_file,'w') as f:
-            json.dump(self.to_dict, f)
+            json.dump(self.to_dict, f,ensure_ascii=False, indent=4) # JSON 파일에 제품 정보를 저장합니다.
 
     def delete_product(self, product: Product = None, id: int = None) -> list[Product]:
         """
@@ -290,6 +296,7 @@ class VendingMachine(BaseException):
         assert type(product) is Product  # product가 Product 클래스의 인스턴스인지 확인
         property_list = {'name': name, 'price': price, 'count': count}
         
+        # property_list의 값이 None이 아닌 경우에만 Product 객체의 속성을 업데이트
         for key, value in property_list.items():
             if value is not None:
                 setattr(product, key, value)
@@ -382,18 +389,51 @@ class VendingMachine(BaseException):
                 raise ValueError(str(insufficient_change)) # 거스름돈이 부족한 단위를 반환
         return refund_dict # 환불할 잔돈을 나타내는 딕셔너리 반환
 
-    def money_check(self,money:int, count:int = None):
+    def money_check(self,money:int, count:int = None) -> bool:
+        """
+        거스름돈 보관함에 돈을 추가하거나, 돈을 반환할 때 사용하는 메서드
+        
+        Args:
+            money (int): 거스름돈의 종류
+            count (int, optional): 거스름돈의 개수. Defaults to None.
+            
+        Returns:
+            bool: 거스름돈을 추가하거나 반환할 수 있는지 여부
+        
+        Raises:
+            AssertionError: money가 100, 500, 1000 중 하나가 아닌 경우 예외 발생
+        """
         assert money in [1000, 500, 100, None], 'Wrong money'
         if money != None and count != None:
             assert count>0, 'Wrong count'
         return True
                     
     def add_change(self, money: int, count: int) -> None:
+        """
+        거스름돈 보관함에 돈을 추가하는 메서드
+        
+        Args:
+            money (int): 거스름돈의 종류
+            count (int): 거스름돈의 개수
+        
+        Returns:
+            int: 추가된 거스름돈의 개수
+        """
         self.money_check(money,count)
         self.change_box[money] += count
         return count
     
-    def get_change(self, money: int, count, int)-> None:
+    def get_change(self, money: int, count: int)-> None:
+        """
+        거스름돈 보관함에서 돈을 반환하는 메서드
+        
+        Args:
+            money (int): 거스름돈의 종류
+            count (int): 거스름돈의 개수
+        
+        Returns:
+            int: 반환된 거스름돈의 개수
+        """
         self.money_check(money,count)
 
         change_count = min(count, self.change_box[money])
@@ -429,7 +469,6 @@ class VendingMachine(BaseException):
             else:   # 현금으로 결제하는 경우
                 refund_dict = self.cal_refund(product)   # 환불할 거스름돈 계산
                 product.count -= 1   # 상품 수량 차감
-                self.inserted_money -= product.price   # 투입된 금액에서 상품
                 self.inserted_money -= product.price   # 투입된 금액에서 상품 가격 차감
                 refund_dict, _ = self.refund(refund_dict)   # 환불
                 output += f' {self.inserted_money}원을 반환합니다.'   # 반환할 금액을 출력
@@ -461,4 +500,3 @@ class VendingMachine(BaseException):
             self.issue_report(issue_type="No_change", issue_on=str(e))
             return False
         return product.price <= self.inserted_money # 투입된 금액이 상품 가격보다 큰 경우 구매 가능
-    

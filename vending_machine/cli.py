@@ -186,7 +186,7 @@ class CommandLineInterface(BaseException):
         return ('', output)  # 빈 문자열과 output을 튜플로 반환
 
     
-    def insert(self, money: int) -> tuple:
+    def insert(self, money: int) -> tuple[str, str]:
         """
         돈을 투입하는 함수입니다.
 
@@ -251,7 +251,13 @@ class CommandLineInterface(BaseException):
         
         return Input  # 그 외의 입력은 그대로 반환
 
-    def check_passwd(self):
+    def check_passwd(self) -> bool:
+        """
+        비밀번호를 확인하는 메서드입니다.
+        
+        Returns:
+            bool: 비밀번호가 일치하는 경우 True, 그렇지 않은 경우 False를 반환
+        """
         if os.path.exists(self.password_file):
             before_passwd = input('비밀번호를 입력하세요: ')
             m = hashlib.sha256()
@@ -263,6 +269,12 @@ class CommandLineInterface(BaseException):
             return True
     
     def change_passwd(self):
+        """
+        비밀번호를 변경하는 메서드입니다.
+        
+        Returns:
+            str: 비밀번호 변경 완료 메시지를 반환
+        """
         self.clear()
         passwd = input('새로운 비밀번호를 입력하세요:')
         with open('passwd.txt', 'w') as f:
@@ -272,17 +284,37 @@ class CommandLineInterface(BaseException):
         return '나가기'
 
     def add_product(self):
+        """
+        상품을 추가하는 메서드입니다.
+        
+        Returns:
+            str: 상품 추가 완료 메시지를 반환
+        """
         name = input('추가할 상품의 이름을 입력하세요: ')
-        price = input('추가할 상품의 가격을 입력하세요: ')
+        try:
+            price = int(input('추가할 상품의 가격을 입력하세요: '))
+        except ValueError:
+            print('잘못된 입력입니다. 다시 입력해주세요.')
+            return self.add_product()
+            
         try :
             count = int(input('추가할 상품의 개수를 입력하세요(미입력시 30): '))
-        except :
+        except ValueError:
             count = 30
         
         self.machine.add_product(name=name,price=price,count=count)
         return '나가기'
     
     def select_product(self, action: str):
+        """
+        상품을 선택하는 메서드입니다.
+        
+        Args:
+            action (str): 수행할 동작을 나타내는 문자열
+        
+        Returns:
+            Product: 선택된 상품(Product) 객체
+        """
         sys.stdout.write(self.show_product(manage=True)[0]+'\n')
         while True:
             id = int(input(f'{action}할 상품의 번호를 입력하세요: '))
@@ -293,16 +325,30 @@ class CommandLineInterface(BaseException):
             print('잘못된 상품 번호입니다. 다시 입력해주세요.')
 
     def delete_product(self):
+        """
+        상품을 삭제하는 메서드입니다.
+        
+        Returns:
+            str: 상품 삭제 완료 메시지를 반환
+        """
         product = self.select_product('삭제')
         if product:
             self.machine.delete_product(product)
             resort = input('상품을 삭제하였습니다. 상품 ID를 재정렬하시겠습니까?(y/n): ')
             if resort == 'y':
                 self.machine.resort_product()
+                sys.stdout.write("상품 ID를 재정렬하였습니다.\n")
+        return '나가기'
 
 
     
     def edit_product(self):
+        """
+        상품을 수정하는 메서드입니다.
+        
+        Returns:
+            str: 상품 수정 완료 메시지를 반환
+        """
         if len(self.machine.products) == 0:
             self.clear()
             print('자판기에 상품이 존재하지 않습니다.')
@@ -317,6 +363,12 @@ class CommandLineInterface(BaseException):
         return '상품수정 완료'
     
     def edit_products(self):
+        """
+        상품을 수정하는 메서드입니다.
+        
+        Returns:   
+            str: 상품 수정 완료 메시지를 반환
+        """
         functions = [self.add_product, self.delete_product, self.edit_product, lambda: '나가기']
         self.clear()
         try:
@@ -327,6 +379,12 @@ class CommandLineInterface(BaseException):
             return self.edit_products()
     
     def edit_change(self):
+        """
+        잔돈을 수정하는 메서드입니다.
+        
+        Returns:
+            str: 잔돈 수정 완료 메시지를 반환
+        """
         self.clear()
         sys.stdout.write(self.machine.change_box_info)
         try :
@@ -338,6 +396,12 @@ class CommandLineInterface(BaseException):
             return self.edit_change()
     
     def add_change(self):
+        """
+        잔돈을 추가하는 메서드입니다.
+        
+        Returns:
+            str: 잔돈 추가 완료 메시지를 반환
+        """
         self.clear()
         try:
             money = int(input('추가할 잔돈의 종류를 입력하세요: '))
@@ -349,6 +413,15 @@ class CommandLineInterface(BaseException):
             return self.add_change()
     
     def get_change(self):
+        """
+        잔돈을 인출하는 메서드입니다.
+        
+        Returns:
+            str: 잔돈 인출 완료 메시지를 반환
+        
+        Raises:
+            Exception: 잔돈이 부족하거나 입력이 잘못된 경우
+        """
         try:
             money = int(input('인출할 잔돈의 종류을 입력하세요: '))
             count = int(input('인출할 잔돈의 개수를 입력하세요: '))
@@ -364,6 +437,12 @@ class CommandLineInterface(BaseException):
     
     
     def management(self):
+        """
+        관리자 모드를 실행하는 메서드입니다.
+        
+        Returns:
+            str: 관리자 모드 종료 메시지를 반환
+        """
         if self.check_passwd():
             options = {
                 '1': self.edit_products,
