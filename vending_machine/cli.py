@@ -233,7 +233,7 @@ class CommandLineInterface(BaseException):
         Raises:
             SystemExit: 사용자 입력이 "exit" 또는 "나가기"인 경우
         """
-        if Input in ["help", "도움"]:
+        if "도움" in Input or "help" in Input.lower():
             return self.reload(self.help)  # help 명령어 처리
         elif Input in ["list", "목록"]:
             return self.reload(self.show_product())  # list 명령어 처리
@@ -490,7 +490,7 @@ class CommandLineInterface(BaseException):
         
         if output is not None:
             sys.stdout.write(output)  # 출력할 내용의 시작 부분 출력
-        if self.is_credit and product_list:
+        if (self.is_credit or self.machine.inserted_money > 0) and product_list:
             sys.stdout.write(self.buyable_product+'\n')  # 상품 목록 출력
         sys.stdout.write('\n'+self.status)  # 현재 상태 출력
         if end_output is not None:
